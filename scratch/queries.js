@@ -6,27 +6,36 @@ const { MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 
 // get all notes or notes by search term
-// mongoose.connect(MONGODB_URI)
-//   .then(() => {
-//     const searchTerm = 'lady gaga';
-//     let filter = {};
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    // {$or: [{"title": {$regex: searchTerm}}, {"content": {$regex: searchTerm}}
+    const searchTerm = 'Posuere';
+    let filter = {};
+    const filterArray = [];
+    
+    if (searchTerm) {
+      const title = { 'title': {$regex: searchTerm, $options: 'i'} };
+      filterArray.push(title);
+      const content = { 'content': {$regex: searchTerm, $options: 'i'} };
+      filterArray.push(content);
+      filter.$or = filterArray;
+    }
 
-//     if (searchTerm) {
-//       filter.title = { $regex: searchTerm, $options: 'i' };
-//     }
+    console.log(filterArray);
+    console.log(filter);
 
-//     return Note.find(filter).sort({ updatedAt: 'desc' });
-//   })
-//   .then(results => {
-//     console.log(results);
-//   })
-//   .then(() => {
-//     return mongoose.disconnect();
-//   })
-//   .catch(err => {
-//     console.error(`ERROR: ${err.message}`);
-//     console.error(err);
-//   });
+    return Note.find(filter).sort({ updatedAt: 'desc' });
+  })
+  .then(results => {
+    console.log(results);
+  })
+  .then(() => {
+    return mongoose.disconnect();
+  })
+  .catch(err => {
+    console.error(`ERROR: ${err.message}`);
+    console.error(err);
+  });
 
 // Find note by id using Note.findById
 // mongoose.connect(MONGODB_URI)
@@ -92,18 +101,18 @@ const Note = require('../models/note');
 
 // Delete a note by id using Note.findByIdAndRemove
 
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    const idOfItemToRemove = '5b7329ce12b59d4a7471492b';
-    return Note.findByIdAndRemove(idOfItemToRemove);
-  })
-  .then(results => {
-    console.log(results);
-  })
-  .then(() => {
-    return mongoose.disconnect();
-  })
-  .catch(err => {
-    console.error(`ERROR: ${err.message}`);
-    console.error(err);
-  });
+// mongoose.connect(MONGODB_URI)
+//   .then(() => {
+//     const idOfItemToRemove = '5b7329ce12b59d4a7471492b';
+//     return Note.findByIdAndRemove(idOfItemToRemove);
+//   })
+//   .then(results => {
+//     console.log(results);
+//   })
+//   .then(() => {
+//     return mongoose.disconnect();
+//   })
+//   .catch(err => {
+//     console.error(`ERROR: ${err.message}`);
+//     console.error(err);
+//   });
