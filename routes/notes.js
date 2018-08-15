@@ -60,7 +60,7 @@ router.post('/', (req, res, next) => {
     
   Note.create(newItem)
     .then(result => {
-      res.status(201).json(result);
+      res.location(`/api/notes/${result.id}`).status(201).json(result);
     })
     .catch(err => {
       next(err);
