@@ -73,7 +73,7 @@ router.put('/:id', (req, res, next) => {
   const idOfItemToUpdate = req.params.id;
   const updateItem = {};
   const keyArray = Object.keys(req.body);
-  
+
   keyArray.forEach(key => updateItem[key] = req.body[key]);
 
   if (!(keyArray.length)) {
