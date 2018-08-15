@@ -59,7 +59,7 @@ describe('Notes API resource', function() {
     });
 
     // restaurant in the response should have the correct fields
-    it('should return notes with right fields', function() {
+    it('should return notes with the right fields', function() {
       let resNote;
 
       return Promise.all([
