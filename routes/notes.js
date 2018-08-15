@@ -11,15 +11,11 @@ router.get('/', (req, res, next) => {
   const filterArray = [];
   
   if (searchTerm) {
-    const title = { 'title': {$regex: searchTerm, $options: 'i'} };
-    filterArray.push(title);
-    const content = { 'content': {$regex: searchTerm, $options: 'i'} };
-    filterArray.push(content);
-    filter.$or = filterArray;
+    const searchObject =  {$regex: searchTerm, $options: 'i'};
+    const title = {'title': searchObject };
+    const content = { 'content': searchObject };
+    filter.$or = [title, content];
   }
-
-  console.log(filterArray);
-  console.log(filter);
 
   Note
     .find(filter)
@@ -76,7 +72,15 @@ router.post('/', (req, res, next) => {
 router.put('/:id', (req, res, next) => {
   const idOfItemToUpdate = req.params.id;
   const updateItem = {};
-  Object.keys(req.body).forEach(key => updateItem[key] = req.body[key]);
+  const keyArray = Object.keys(req.body);
+  
+  keyArray.forEach(key => updateItem[key] = req.body[key]);
+
+  if (!(keyArray.length)) {
+    const message = 'Nothing sent to update';
+    console.error(message);
+    return res.status(400).send(message);
+  }
   
   Note.findByIdAndUpdate(idOfItemToUpdate, updateItem, {new : true})
     .then(result => {
