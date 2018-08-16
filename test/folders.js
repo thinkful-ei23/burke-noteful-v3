@@ -32,7 +32,7 @@ describe('Folders API resource', function() {
   });
 
   beforeEach(function () {
-    return Folder.insertMany(seedFolders);
+    return Promise.all([Note.insertMany(seedNotes), Folder.insertMany(seedFolders)]);
   });
 
   afterEach(function () {

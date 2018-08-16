@@ -65,10 +65,12 @@ router.post('/', (req, res, next) => {
     console.error(message);
     return res.status(400).send(message);
   }
-  
+
+  const folderId = req.body.folderId;
+
   if('folderId' in req.body) {
-    if (!(mongodb.ObjectID.isValid(req.body.folderId))) {
-      const message = 'Not a valid id';
+    if (!(mongodb.ObjectID.isValid(folderId)) && folderId !== '') {
+      const message = 'Not a valid folder id';
       console.error(message);
       return res.status(400).send(message);
     }
@@ -76,7 +78,7 @@ router.post('/', (req, res, next) => {
   
   const newItem = {
     title: req.body.title,
-    content: req.body.content
+    content: req.body.content,
   };
     
   Note.create(newItem)
@@ -101,6 +103,14 @@ router.put('/:id', (req, res, next) => {
     const message = 'Nothing sent to update';
     console.error(message);
     return res.status(400).send(message);
+  }
+
+  if('folderId' in req.body) {
+    if (!(mongodb.ObjectID.isValid(req.body.folderId))) {
+      const message = 'Not a valid folder id';
+      console.error(message);
+      return res.status(400).send(message);
+    }
   }
   
   Note.findByIdAndUpdate(idOfItemToUpdate, updateItem, {new : true})

@@ -10,8 +10,10 @@ const app = require('../server');
 const {TEST_MONGODB_URI} = require('../config');
 
 const Note = require('../models/note');
+const Folder = require('../models/folder');
 
 const seedNotes = require('../db/seed/notes');
+const seedFolders = require('../db/seed/folders');
 
 const expect = chai.expect;
 
@@ -30,7 +32,7 @@ describe('Notes API resource', function() {
   });
 
   beforeEach(function () {
-    return Note.insertMany(seedNotes);
+    return Promise.all([Note.insertMany(seedNotes), Folder.insertMany(seedFolders)]);
   });
 
   afterEach(function () {
@@ -83,8 +85,9 @@ describe('Notes API resource', function() {
           expect(resNote.id).to.equal(dataNote.id);
           expect(resNote.title).to.equal(dataNote.title);
           expect(resNote.content).to.equal(dataNote.content);
-          // expect(resNote.createdAt).to.equal(dataNote.updatedAt);
-          // expect(resNote.createdAt).to.equal(dataNote.updatedAt);
+          expect(resNote.folderid).to.equal(dataNote.folderId);
+          expect(new Date(resNote.createdAt)).to.eql(new Date(dataNote.createdAt));
+          expect(new Date(resNote.updatedAt)).to.eql(new Date(dataNote.updatedAt));
         });
  
     });
@@ -115,8 +118,9 @@ describe('Notes API resource', function() {
           expect(resNote.id).to.equal(dataNote.id);
           expect(resNote.title).to.equal(dataNote.title);
           expect(resNote.content).to.equal(dataNote.content);
-          // expect(resNote.createdAt).to.equal(dataNote.updatedAt);
-          // expect(resNote.createdAt).to.equal(dataNote.updatedAt);
+          expect(resNote.folderid).to.equal(dataNote.folderId);
+          expect(new Date(resNote.createdAt)).to.eql(new Date(dataNote.createdAt));
+          expect(new Date(resNote.updatedAt)).to.eql(new Date(dataNote.updatedAt));
         });
     });
   });
@@ -141,8 +145,9 @@ describe('Notes API resource', function() {
           expect(resNote.id).to.equal(data.id);
           expect(resNote.title).to.equal(data.title);
           expect(resNote.content).to.equal(data.content);
-          // expect(resNote.createdAt).to.equal(data.updatedAt);
-          // expect(resNote.createdAt).to.equal(data.updatedAt);
+          expect(resNote.folderid).to.equal(data.folderId);
+          expect(new Date(resNote.createdAt)).to.eql(new Date(data.createdAt));
+          expect(new Date(resNote.updatedAt)).to.eql(new Date(data.updatedAt));
         });
     });
 
@@ -173,6 +178,7 @@ describe('Notes API resource', function() {
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
+          expect(res.body.folderid).to.equal(data.folderId);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
         });
@@ -227,6 +233,7 @@ describe('Notes API resource', function() {
           expect(_res.body.id).to.equal(data.id);
           expect(_res.body.title).to.equal(data.title);
           expect(_res.body.content).to.equal(data.content);
+          expect(_res.body.folderid).to.equal(data.folderId);
           expect(new Date(_res.body.createdAt)).to.eql(new Date(data.createdAt));
           expect(new Date(_res.body.updatedAt)).to.eql(new Date(data.updatedAt));
         });
