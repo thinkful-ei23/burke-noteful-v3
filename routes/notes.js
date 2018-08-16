@@ -4,6 +4,16 @@ const express = require('express');
 const router = express.Router();
 const Note = require('../models/note');
 
+router.get('/test', (req, res, next) => {
+
+  const obj = {
+    a: 'yo',
+    b: 2,
+    c: [1, 'yooooo']
+  };
+  res.status(200).json(obj);
+});
+
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
   const searchTerm = req.query.searchTerm;
