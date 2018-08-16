@@ -3,21 +3,33 @@
 const express = require('express');
 const router = express.Router();
 const Note = require('../models/note');
+const mongodb = require('mongodb');
 
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
   const searchTerm = req.query.searchTerm;
+  const folderSearchTerm = req.query.folderId;
+
   let filter = {};
-  const filterArray = [];
   
   if (searchTerm) {
     const searchObject =  {$regex: searchTerm, $options: 'i'};
     const title = {'title': searchObject };
     const content = { 'content': searchObject };
-    filter.$or = [title, content];
+    const orArray = [title, content];
+    if (folderSearchTerm) {
+      const folderSearchObj = {folderId : folderSearchTerm};
+      filter.$and = [ { $or : orArray}, folderSearchObj];
+    } else {
+      filter.$or = orArray;
+    }
   }
 
+  if (folderSearchTerm && !searchTerm) {
+    filter = {folderId : folderSearchTerm};
+  }
+  
   Note
     .find(filter)
     .sort({ updatedAt: 'desc' })
@@ -52,6 +64,14 @@ router.post('/', (req, res, next) => {
     const message = 'Missing title in request body';
     console.error(message);
     return res.status(400).send(message);
+  }
+  
+  if('folderId' in req.body) {
+    if (!(mongodb.ObjectID.isValid(req.body.folderId))) {
+      const message = 'Not a valid id';
+      console.error(message);
+      return res.status(400).send(message);
+    }
   }
   
   const newItem = {

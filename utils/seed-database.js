@@ -3,11 +3,12 @@
 const mongoose = require('mongoose');
 
 const { MONGODB_URI } = require('../config');
-const Note = require('../models/note');
-const Folder = require('..models/folder');
 
-const seedNotes = require('../db/seed/notes');
+const Folder = require('../models/folder');
+const Note = require('../models/note');
+
 const seedFolders = require('../db/seed/folders');
+const seedNotes = require('../db/seed/notes');
 
 mongoose.connect(MONGODB_URI)
   .then(() => mongoose.connection.db.dropDatabase())
