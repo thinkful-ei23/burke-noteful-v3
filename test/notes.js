@@ -271,39 +271,4 @@ describe('Notes API resource', function() {
         });
     });
   });
-
-  describe.only('GET api/notes/test', function() {
-    it('should return an object with the right fields', function() {
-      return chai.request(app).get('/api/notes/test')
-        .then(res => {
-          const obj = res.body;
-          const keyArray = Object.keys(obj);
-          const keyLength = keyArray.length;
-          expect(res).to.have.status(200);
-          expect(obj).to.be.an('object');
-          // res.body to be an object
-          // check to make sure we have three keys
-          expect(keyLength).to.equal(3);
-          
-          const expectedValues = ['string', 'number', 'object'];
-
-          for (let i = 0; i < keyLength; i++) {
-            expect(typeof(obj[keyArray[i]])).to.equal(expectedValues[i]);
-          }
-          let i = 0;
-
-          // keyArray.forEach(key => {
-          //   expect(key)
-          //   // check each key 
-          // });
-          
-          // i want to make sure the a value is a string
-          // b value is a number
-          // c is an array
-        });
-    });
-  });
-
 });
-
-//testing travis
