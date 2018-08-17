@@ -16,4 +16,4 @@ tagSchema.set('toObject', {
   }
 });
 
-module.export = mongoose.model('Tag', tagSchema);
+module.exports = mongoose.model('Tag', tagSchema);
