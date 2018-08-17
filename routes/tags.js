@@ -21,10 +21,21 @@ router.get('/', (req, res, next) => {
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
   const id = req.params.id;
+
+  if (!(mongodb.ObjectID.isValid(id))) {
+    const message = 'Not a valid tag id';
+    console.error(message);
+    return res.status(400).send(message);
+  }
+
   Tag
     .findById(id)
     .then(result => {
-      res.json(result);
+      if (result) {
+        res.json(result);
+      } else {
+        return res.status(404).send('Tag not found');
+      }
     })
     .catch(err => {
       next(err);
@@ -35,31 +46,30 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
 
-  if (!('title' in req.body)) {
-    const message = 'Missing title in request body';
+  if (!('name' in req.body)) {
+    const message = 'Missing name in request body';
     console.error(message);
     return res.status(400).send(message);
   }
 
-  const folderId = req.body.folderId;
-  const newItem = {
-    title: req.body.title,
-    content: req.body.content,
+  const tagId = req.body.tagId;
+  const newTag = {
+    name: req.body.name,
   };
 
-  if('folderId' in req.body) {
-    if (!(mongodb.ObjectID.isValid(folderId)) && folderId !== '') {
-      const message = 'Not a valid folder id';
+  if('tagId' in req.body) {
+    if (!(mongodb.ObjectID.isValid(tagId)) && tagId !== '') {
+      const message = 'Not a valid tag id';
       console.error(message);
       return res.status(400).send(message);
     } else {
-      newItem.folderId = folderId;
+      newTag.tagId = tagId;
     }
   }
 
-  Note.create(newItem)
+  Tag.create(newTag)
     .then(result => {
-      res.location(`/api/notes/${result.id}`).status(201).json(result);
+      res.location(`/api/tags/${result.id}`).status(201).json(result);
     })
     .catch(err => {
       next(err);
@@ -81,15 +91,15 @@ router.put('/:id', (req, res, next) => {
     return res.status(400).send(message);
   }
 
-  if('folderId' in req.body) {
-    if (!(mongodb.ObjectID.isValid(req.body.folderId))) {
-      const message = 'Not a valid folder id';
+  if('tagId' in req.body) {
+    if (!(mongodb.ObjectID.isValid(req.body.tagId))) {
+      const message = 'Not a valid tag id';
       console.error(message);
       return res.status(400).send(message);
     }
   }
   
-  Note.findByIdAndUpdate(idOfItemToUpdate, updateItem, {new : true})
+  Tag.findByIdAndUpdate(idOfItemToUpdate, updateItem, {new : true})
     .then(result => {
       res.json(result);
     })
@@ -102,7 +112,7 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
   const idOfItemToRemove = req.params.id;
-  Note
+  Tag
     .findByIdAndRemove(idOfItemToRemove)
     .then(() => {
       res.status(204).end();
