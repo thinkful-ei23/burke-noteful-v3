@@ -8,7 +8,7 @@ const mongodb = require('mongodb');
 router.get('/', (req, res, next) => {
   Tag
     .find({})
-    .sort({ updatedAt: 'desc' })
+    .sort({ name: 'desc' })
     .then(tags => {
       res.json(tags);
     })
@@ -47,31 +47,24 @@ router.get('/:id', (req, res, next) => {
 router.post('/', (req, res, next) => {
 
   if (!('name' in req.body)) {
-    const message = 'Missing name in request body';
+    const message = 'Missing name of new tag in request body';
     console.error(message);
     return res.status(400).send(message);
   }
-
-  const tagId = req.body.tagId;
+  
   const newTag = {
     name: req.body.name,
   };
-
-  if('tagId' in req.body) {
-    if (!(mongodb.ObjectID.isValid(tagId)) && tagId !== '') {
-      const message = 'Not a valid tag id';
-      console.error(message);
-      return res.status(400).send(message);
-    } else {
-      newTag.tagId = tagId;
-    }
-  }
-
+    
   Tag.create(newTag)
     .then(result => {
       res.location(`/api/tags/${result.id}`).status(201).json(result);
     })
     .catch(err => {
+      if (err.code === 11000) {
+        err = new Error('You already have a tag with that name');
+        err.status = 400;
+      }
       next(err);
     });
 
