@@ -3,7 +3,9 @@
 const express = require('express');
 const router = express.Router();
 const Tag = require('../models/tag');
+const Note = require('../models/note');
 const mongodb = require('mongodb');
+const mongoose = require('mongoose');
 
 router.get('/', (req, res, next) => {
   Tag
@@ -108,15 +110,57 @@ router.put('/:id', (req, res, next) => {
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
-  const idOfItemToRemove = req.params.id;
+  const idOfTagToRemove = req.params.id;
+  let modifiedNotes;
+  // delete all notes that have folderId equal to idOfItemToRemove
   Tag
-    .findByIdAndRemove(idOfItemToRemove)
-    .then(() => {
-      res.status(204).end();
+    .findByIdAndRemove(idOfTagToRemove)
+    .then((result) => {
+      if (result) {
+        return Note.update(
+          {'tags' : idOfTagToRemove},{ $pull: {'tags' : idOfTagToRemove} },{multi: true, 'new': true});
+      } else {
+        return res.status(404).send('Tag not found');
+      }
+    })
+    .then((result) => {
+      if(result) {
+        res.json(result).status(200).end();
+      } else {
+        res.status(204).end();
+      }
     })
     .catch(err => {
       next(err);
     });
+
+
+  
+  
+  
+  
+  // Tag
+  //   .findByIdAndRemove(idOfTagToRemove)
+  //   .then(() => {
+  //     modifiedNotes = Note.find({tags: idOfTagToRemove});
+  //     return Note.update({tags: idOfTagToRemove},{$pull: { tags: idOfTagToRemove}}, {multi: true});
+  //   })
+  //   .then((result) => {
+  //     // const resultObj = JSON.parse(result);
+  //     console.log(result);
+  //     if (result.nModified > 0) {
+  //       res.status(200).json(result);
+  //     } else {
+  //       res.status(204).end();
+  //     }
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
+
+  // Remove the tag
+// Using $pull, remove the tag from the tags array in the notes collection.
+// Add condition that checks the result and returns a 200 response with the result or a 204 status
 
 });
 
