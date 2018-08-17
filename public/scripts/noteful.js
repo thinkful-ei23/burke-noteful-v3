@@ -20,6 +20,7 @@ const noteful = (function () {
       store.authorized = false;
       noteful.render();
     }
+    console.log('in error handler');
     showFailureMessage(err.responseJSON.message);
   }
 
@@ -308,7 +309,7 @@ const noteful = (function () {
 
       store.currentNote = {};
 
-      api.search('/api/notes', store.currentQuery)
+      api.search('/api/notes/', store.currentQuery)
         .then(response => {
           store.notes = response;
           render();

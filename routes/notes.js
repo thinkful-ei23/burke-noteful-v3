@@ -15,51 +15,55 @@ router.get('/', (req, res, next) => {
   // Use .populate() to populate the tags array
   // Capture the incoming tagId and conditionally add it to the database query filter
   let filter = {};
-  filter.$and = [];
+
+  // filter.folderId = folderSearchTerm; 
+  // 
+  
 
   const queryCount = Object.keys(req.query).length;
 
 
   if (folderSearchTerm) {
     const folderSearchObj = {folderId : folderSearchTerm};
-    if (queryCount > 1) {
-      filter['$and'].push(folderSearchObj);
-    } else {
-      delete filter.$and;
-      filter = folderSearchObj;
-    }
+    filter.folderId = folderSearchTerm;
+    // if (queryCount > 1) {
+    //   filter['$and'].push(folderSearchObj);
+    // } else {
+    //   delete filter.$and;
+    //   filter = folderSearchObj;
+    // }
 
   }
 
   if (tagSearchTerm) {
-    const tagSearchObj = {'tags' : tagSearchTerm};
-    if (queryCount > 1) {
-      filter['$and'].push(tagSearchObj);
-    } else {
-      delete filter.$and;
-      filter = tagSearchObj;
-      console.log(filter);
-    }
+    filter.tags = tagSearchTerm;
+    // const tagSearchObj = {'tags' : tagSearchTerm};
+    // if (queryCount > 1) {
+    //   filter['$and'].push(tagSearchObj);
+    // } else {
+    //   delete filter.$and;
+    //   filter = tagSearchObj;
+    // }
   }
 
   if (searchTerm) {
+    // we need to set up an explit and
     const searchObject =  {$regex: searchTerm, $options: 'i'};
     const title = {'title': searchObject };
     const content = { 'content': searchObject };
     const orArray = [title, content];
     const searchTermObj = { $or : orArray };
-    if (queryCount > 1) {
-      filter['$and'].push(searchTermObj);
+    if (queryCount === 1) {
+      filter.$or = orArray;
     } else {
-      delete filter.$and;
       filter = searchTermObj;
     }
   }
 
-  if (queryCount === 0) {
-    delete filter.$and;
-  }
-
+  // if (queryCount === 0) {
+  //   delete filter.$and;
+  // }
+  console.log(filter);
 
   Note
     .find(filter)
@@ -92,39 +96,30 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
+  const {title, content, folderId, tags = []} = req.body;
 
-  if (!('title' in req.body)) {
-    const message = 'Missing title in request body';
-    console.error(message);
-    return res.status(400).send(message);
-  }
-
-  const folderId = req.body.folderId;
-  const tags = req.body.tags;
-  console.log(tags);
   const newItem = {
-    title: req.body.title,
-    content: req.body.content,
+    title, content, folderId, tags
   };
 
-  if('folderId' in req.body) {
-    if (!(mongodb.ObjectID.isValid(folderId)) && folderId !== '') {
-      const message = 'Not a valid folder id';
-      console.error(message);
-      return res.status(400).send(message);
-    } else {
-      newItem.folderId = folderId;
-    }
+  if (!title) {
+    const err = new Error('Missing title in request body');
+    err.status = 400;
+    return next(err);
   }
 
-  if('tags' in req.body) {
-    tags.forEach(tag => {
-      if (!(mongodb.ObjectID.isValid(tag)) && tag !== '') {
-        const message = 'Not a valid tag id';
-        console.error(message);
-        return res.status(400).send(message);
-      } else {
-        newItem.tags = tags;
+  if (folderId && !mongodb.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('Not a valid folder id');
+    err.status = 400;
+    return next(err);
+  }
+
+  if (tags) {
+    tags.forEach((tag) => {
+      if (!mongodb.Types.ObjectId.isValid(tag)) {
+        const err = new Error('Not a valid tag id');
+        err.status = 400;
+        return next(err);
       }
     });
   }
