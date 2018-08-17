@@ -76,7 +76,7 @@ describe('Notes API resource', function() {
           res.body.forEach(function(note) {
             expect(note).to.be.a('object');
             expect(note).to.include.keys(
-              'id', 'title', 'content');
+              'id', 'title', 'content', 'folderId', 'createdAt', 'updatedAt');
           });
           resNote = res.body[0];
           return Note.findById(resNote.id);
@@ -85,7 +85,7 @@ describe('Notes API resource', function() {
           expect(resNote.id).to.equal(dataNote.id);
           expect(resNote.title).to.equal(dataNote.title);
           expect(resNote.content).to.equal(dataNote.content);
-          expect(resNote.folderid).to.equal(dataNote.folderId);
+          expect(mongoose.Types.ObjectId(resNote.folderId)).to.deep.equal(dataNote.folderId);
           expect(new Date(resNote.createdAt)).to.eql(new Date(dataNote.createdAt));
           expect(new Date(resNote.updatedAt)).to.eql(new Date(dataNote.updatedAt));
         });
@@ -118,7 +118,7 @@ describe('Notes API resource', function() {
           expect(resNote.id).to.equal(dataNote.id);
           expect(resNote.title).to.equal(dataNote.title);
           expect(resNote.content).to.equal(dataNote.content);
-          expect(resNote.folderid).to.equal(dataNote.folderId);
+          expect(mongoose.Types.ObjectId(resNote.folderId)).to.deep.equal(dataNote.folderId);
           expect(new Date(resNote.createdAt)).to.eql(new Date(dataNote.createdAt));
           expect(new Date(resNote.updatedAt)).to.eql(new Date(dataNote.updatedAt));
         });
@@ -145,7 +145,7 @@ describe('Notes API resource', function() {
           expect(resNote.id).to.equal(data.id);
           expect(resNote.title).to.equal(data.title);
           expect(resNote.content).to.equal(data.content);
-          expect(resNote.folderid).to.equal(data.folderId);
+          expect(mongoose.Types.ObjectId(resNote.folderId)).to.deep.equal(data.folderId);
           expect(new Date(resNote.createdAt)).to.eql(new Date(data.createdAt));
           expect(new Date(resNote.updatedAt)).to.eql(new Date(data.updatedAt));
         });
@@ -158,7 +158,8 @@ describe('Notes API resource', function() {
     it('should create and return a new item when provided valid data', function () {
       const newItem = {
         'title': 'The best article about cats ever!',
-        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...'
+        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...',
+        'folderId' : '111111111111111111111103'
       };
 
       let res;
@@ -171,14 +172,14 @@ describe('Notes API resource', function() {
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+          expect(res.body).to.have.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId');
           return Note.findById(res.body.id);
         })
         .then(data => {
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
-          expect(res.body.folderid).to.equal(data.folderId);
+          expect(mongoose.Types.ObjectId(res.body.folderId)).to.deep.equal(data.folderId);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
         });
@@ -217,6 +218,7 @@ describe('Notes API resource', function() {
       return Note.findOne()
         .then(_data => {
           data = _data;
+          updateObject.folderId = data.folderId;
           // 2) then call the API with the ID
           return chai.request(app).put(`/api/notes/${data.id}`)
             .send(updateObject);
@@ -230,10 +232,11 @@ describe('Notes API resource', function() {
           return Note.findById(data.id);
         })
         .then(data => {
+          // both of these are the same - why are they failing?
           expect(_res.body.id).to.equal(data.id);
           expect(_res.body.title).to.equal(data.title);
           expect(_res.body.content).to.equal(data.content);
-          expect(_res.body.folderid).to.equal(data.folderId);
+          expect(mongoose.Types.ObjectId(_res.body.folderId)).to.deep.equal(data.folderId);
           expect(new Date(_res.body.createdAt)).to.eql(new Date(data.createdAt));
           expect(new Date(_res.body.updatedAt)).to.eql(new Date(data.updatedAt));
         });

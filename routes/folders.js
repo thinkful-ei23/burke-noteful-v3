@@ -76,24 +76,29 @@ router.post('/', (req, res, next) => {
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
 
-  const idOfItemToUpdate = req.params.id;
+  const { id } = req.params;
+  const { name } = req.body;
 
-  if (!(mongodb.ObjectID.isValid(idOfItemToUpdate))) {
-    const message = 'Not a valid id';
-    console.error(message);
-    return res.status(400).send(message);
+  if (!(mongodb.ObjectID.isValid(id))) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
   }
 
   if (!('name' in req.body)) {
-    const message = 'Missing name of new folder in request body';
-    console.error(message);
-    return res.status(400).send(message);
+    const err = new Error('Missing name of new folder in request body');
+    err.status = 400;
+    return next(err);
   }
-  const updateItem = {name: req.body.name};
+  const updateFolder = { name };
   
-  Folder.findByIdAndUpdate(idOfItemToUpdate, updateItem, {new : true})
+  Folder.findByIdAndUpdate(id, updateFolder, {new : true})
     .then(result => {
-      res.json(result);
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
     })
     .catch(err => {
       if (err.code === 11000) {

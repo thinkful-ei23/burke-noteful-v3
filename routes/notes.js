@@ -67,20 +67,21 @@ router.post('/', (req, res, next) => {
   }
 
   const folderId = req.body.folderId;
+  const newItem = {
+    title: req.body.title,
+    content: req.body.content,
+  };
 
   if('folderId' in req.body) {
     if (!(mongodb.ObjectID.isValid(folderId)) && folderId !== '') {
       const message = 'Not a valid folder id';
       console.error(message);
       return res.status(400).send(message);
+    } else {
+      newItem.folderId = folderId;
     }
   }
-  
-  const newItem = {
-    title: req.body.title,
-    content: req.body.content,
-  };
-    
+
   Note.create(newItem)
     .then(result => {
       res.location(`/api/notes/${result.id}`).status(201).json(result);
