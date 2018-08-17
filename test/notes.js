@@ -209,8 +209,10 @@ describe('Notes API resource', function() {
         .post('/api/notes')
         .send(newItem)
         .then(function (res) {
+          // console log - the error handler on the client side is not picking this up
+          const message = JSON.parse(res.text).message;
           expect(res).to.have.status(400);
-          expect(res.text).to.equal('Missing title in request body');
+          expect(message).to.equal('Missing title in request body');
         });
        
     });
