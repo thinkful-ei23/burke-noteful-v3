@@ -32,7 +32,7 @@ describe('Folders API resource', function() {
   });
 
   beforeEach(function () {
-    return Promise.all([Note.insertMany(seedNotes), Folder.insertMany(seedFolders)]);
+    return Promise.all([Folder.insertMany(seedFolders), Folder.createIndexes()]);
   });
 
   afterEach(function () {
@@ -178,7 +178,7 @@ describe('Folders API resource', function() {
        
     });
 
-    // grabbed this from solution
+    // grabbed this from solution to check whether the bug was my test
     it('should return an error when given a duplicate name', function () {
       return Folder.findOne()
         .then(data => {
@@ -189,7 +189,7 @@ describe('Folders API resource', function() {
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body.message).to.equal('Folder name already exists');
+          expect(res.body.message).to.equal('You already have a folder with that name');
         });
     });
 
@@ -232,8 +232,7 @@ describe('Folders API resource', function() {
     });
 
     it('should respond with a 400 if you attempt to update a folder without a name', function () {
-      const updateObject = {
-      };
+      const updateObject = {};
       let data;
       return Folder.findOne()
         .then(_data => {
