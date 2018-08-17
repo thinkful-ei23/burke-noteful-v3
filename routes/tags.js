@@ -72,31 +72,35 @@ router.post('/', (req, res, next) => {
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
-  const idOfItemToUpdate = req.params.id;
-  const updateItem = {};
-  const keyArray = Object.keys(req.body);
+  const { id } = req.params;
+  const { name } = req.body;
 
-  keyArray.forEach(key => updateItem[key] = req.body[key]);
-
-  if (!(keyArray.length)) {
-    const message = 'Nothing sent to update';
-    console.error(message);
-    return res.status(400).send(message);
+  if (!(mongodb.ObjectID.isValid(id))) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
   }
 
-  if('tagId' in req.body) {
-    if (!(mongodb.ObjectID.isValid(req.body.tagId))) {
-      const message = 'Not a valid tag id';
-      console.error(message);
-      return res.status(400).send(message);
-    }
+  if (!('name' in req.body)) {
+    const err = new Error('Missing name of new tag in request body');
+    err.status = 400;
+    return next(err);
   }
+  const updateTag = { name };
   
-  Tag.findByIdAndUpdate(idOfItemToUpdate, updateItem, {new : true})
+  Tag.findByIdAndUpdate(id, updateTag, {new : true})
     .then(result => {
-      res.json(result);
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
     })
     .catch(err => {
+      if (err.code === 11000) {
+        err = new Error('You already have a tag with that name');
+        err.status = 400;
+      }
       next(err);
     });
 
