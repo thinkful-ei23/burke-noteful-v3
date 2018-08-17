@@ -111,8 +111,7 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
   const idOfTagToRemove = req.params.id;
-  let modifiedNotes;
-  // delete all notes that have folderId equal to idOfItemToRemove
+
   Tag
     .findByIdAndRemove(idOfTagToRemove)
     .then((result) => {
@@ -134,33 +133,6 @@ router.delete('/:id', (req, res, next) => {
       next(err);
     });
 
-
-  
-  
-  
-  
-  // Tag
-  //   .findByIdAndRemove(idOfTagToRemove)
-  //   .then(() => {
-  //     modifiedNotes = Note.find({tags: idOfTagToRemove});
-  //     return Note.update({tags: idOfTagToRemove},{$pull: { tags: idOfTagToRemove}}, {multi: true});
-  //   })
-  //   .then((result) => {
-  //     // const resultObj = JSON.parse(result);
-  //     console.log(result);
-  //     if (result.nModified > 0) {
-  //       res.status(200).json(result);
-  //     } else {
-  //       res.status(204).end();
-  //     }
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
-
-  // Remove the tag
-// Using $pull, remove the tag from the tags array in the notes collection.
-// Add condition that checks the result and returns a 200 response with the result or a 204 status
 
 });
 

@@ -10,28 +10,60 @@ const mongodb = require('mongodb');
 router.get('/', (req, res, next) => {
   const searchTerm = req.query.searchTerm;
   const folderSearchTerm = req.query.folderId;
-
+  const tagSearchTerm = req.query.tagId;
+  //Add tags to the response
+  // Use .populate() to populate the tags array
+  // Capture the incoming tagId and conditionally add it to the database query filter
   let filter = {};
-  
+  filter.$and = [];
+
+  const queryCount = Object.keys(req.query).length;
+
+
+  if (folderSearchTerm) {
+    const folderSearchObj = {folderId : folderSearchTerm};
+    if (queryCount > 1) {
+      filter['$and'].push(folderSearchObj);
+    } else {
+      delete filter.$and;
+      filter = folderSearchObj;
+    }
+
+  }
+
+  if (tagSearchTerm) {
+    const tagSearchObj = {'tags' : tagSearchTerm};
+    if (queryCount > 1) {
+      filter['$and'].push(tagSearchObj);
+    } else {
+      delete filter.$and;
+      filter = tagSearchObj;
+      console.log(filter);
+    }
+  }
+
   if (searchTerm) {
     const searchObject =  {$regex: searchTerm, $options: 'i'};
     const title = {'title': searchObject };
     const content = { 'content': searchObject };
     const orArray = [title, content];
-    if (folderSearchTerm) {
-      const folderSearchObj = {folderId : folderSearchTerm};
-      filter.$and = [ { $or : orArray}, folderSearchObj];
+    const searchTermObj = { $or : orArray };
+    if (queryCount > 1) {
+      filter['$and'].push(searchTermObj);
     } else {
-      filter.$or = orArray;
+      delete filter.$and;
+      filter = searchTermObj;
     }
   }
 
-  if (folderSearchTerm && !searchTerm) {
-    filter = {folderId : folderSearchTerm};
+  if (queryCount === 0) {
+    delete filter.$and;
   }
-  
+
+
   Note
     .find(filter)
+    .populate('tags')
     .sort({ updatedAt: 'desc' })
     .then(notes => {
       res.json(notes);
@@ -48,6 +80,7 @@ router.get('/:id', (req, res, next) => {
   const id = req.params.id;
   Note
     .findById(id)
+    .populate('tags')
     .then(result => {
       res.json(result);
     })
@@ -67,6 +100,8 @@ router.post('/', (req, res, next) => {
   }
 
   const folderId = req.body.folderId;
+  const tags = req.body.tags;
+  console.log(tags);
   const newItem = {
     title: req.body.title,
     content: req.body.content,
@@ -80,6 +115,18 @@ router.post('/', (req, res, next) => {
     } else {
       newItem.folderId = folderId;
     }
+  }
+
+  if('tags' in req.body) {
+    tags.forEach(tag => {
+      if (!(mongodb.ObjectID.isValid(tag)) && tag !== '') {
+        const message = 'Not a valid tag id';
+        console.error(message);
+        return res.status(400).send(message);
+      } else {
+        newItem.tags = tags;
+      }
+    });
   }
 
   Note.create(newItem)
@@ -112,6 +159,16 @@ router.put('/:id', (req, res, next) => {
       console.error(message);
       return res.status(400).send(message);
     }
+  }
+
+  if('tags' in req.body) {
+    updateItem.tags.forEach(tag => {
+      if (!(mongodb.ObjectID.isValid(tag)) && tag !== '') {
+        const message = 'Not a valid tag id';
+        console.error(message);
+        return res.status(400).send(message);
+      }
+    });
   }
   
   Note.findByIdAndUpdate(idOfItemToUpdate, updateItem, {new : true})
