@@ -169,10 +169,8 @@ describe('Notes API resource', function() {
     it('should create and return a new item when provided valid data', function () {
       const newItem = {
         'title': 'The best article about cats ever!',
-        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...',
-        'folderId' : '111111111111111111111103'
+        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...'
       };
-
       let res;
       return chai.request(app)
         .post('/api/notes')
@@ -183,21 +181,16 @@ describe('Notes API resource', function() {
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'tags');
           return Note.findById(res.body.id);
         })
         .then(data => {
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
-          for (let i = 0; i< res.body.tags.length; i++) {
-            expect(mongoose.Types.ObjectId(res.body.tags[i].id)).to.deep.equal(data.tags[i]);
-          }
-          expect(mongoose.Types.ObjectId(res.body.folderId)).to.deep.equal(data.folderId);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
         });
-        
     });
 
     it('should respond with a 400 if you attempt to post without a title', function () {
@@ -212,7 +205,7 @@ describe('Notes API resource', function() {
           // console log - the error handler on the client side is not picking this up
           const message = JSON.parse(res.text).message;
           expect(res).to.have.status(400);
-          expect(message).to.equal('Missing title in request body');
+          expect(message).to.equal('Missing `title` in request body');
         });
        
     });

@@ -96,20 +96,17 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const {title, content, folderId, tags = []} = req.body;
+  const { title, content, folderId, tags = [] } = req.body;
 
-  const newItem = {
-    title, content, folderId, tags
-  };
-
+  /***** Never trust users - validate input *****/
   if (!title) {
-    const err = new Error('Missing title in request body');
+    const err = new Error('Missing `title` in request body');
     err.status = 400;
     return next(err);
   }
 
   if (folderId && !mongodb.Types.ObjectId.isValid(folderId)) {
-    const err = new Error('Not a valid folder id');
+    const err = new Error('The `folderId` is not valid');
     err.status = 400;
     return next(err);
   }
@@ -117,21 +114,25 @@ router.post('/', (req, res, next) => {
   if (tags) {
     tags.forEach((tag) => {
       if (!mongodb.Types.ObjectId.isValid(tag)) {
-        const err = new Error('Not a valid tag id');
+        const err = new Error('The `id` is not valid');
         err.status = 400;
         return next(err);
       }
     });
   }
 
-  Note.create(newItem)
+  const newNote = { title, content, folderId, tags };
+
+  Note.create(newNote)
     .then(result => {
-      res.location(`/api/notes/${result.id}`).status(201).json(result);
+      res
+        .location(`${req.originalUrl}/${result.id}`)
+        .status(201)
+        .json(result);
     })
     .catch(err => {
       next(err);
     });
-
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
