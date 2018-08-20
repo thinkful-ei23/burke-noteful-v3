@@ -9,10 +9,11 @@ const localStrategy = require('../passport/local');
 
 const options = {session: false, failWithError: true};
 
-passport.use(localStrategy);
 const localAuth = passport.authenticate('local', options);
 
 
-router.post('/', localAuth, (req, res) => {
+router.post('/login', localAuth, (req, res) => {
   return res.json(req.user);
 });
+
+module.exports = router;
