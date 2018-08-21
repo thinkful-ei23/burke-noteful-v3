@@ -5,6 +5,9 @@ const router = express.Router();
 const Folder = require('../models/folder');
 const Note = require('../models/note');
 const mongodb = require('mongodb');
+const passport = require('passport');
+
+router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 router.get('/', (req, res, next) => {
   Folder
