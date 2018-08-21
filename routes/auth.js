@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-const {JWT_SECRET, JWT_EXPIRY} = require('../config')
+const {JWT_SECRET, JWT_EXPIRY} = require('../config');
 
 const localStrategy = require('../passport/local');
 
