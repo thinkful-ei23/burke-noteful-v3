@@ -10,8 +10,9 @@ const passport = require('passport');
 router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 router.get('/', (req, res, next) => {
+  const userId = req.user.id;
   Folder
-    .find()
+    .find({userId})
     .sort({ updatedAt: 'desc' })
     .then(folders => {
       res.json(folders);
@@ -25,7 +26,7 @@ router.get('/', (req, res, next) => {
 
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
-
+  const userId = req.user.id;
   // validate that the id is a mongo object id
   const id = req.params.id;
   if (!(mongodb.ObjectID.isValid(id))) {
@@ -36,7 +37,7 @@ router.get('/:id', (req, res, next) => {
 
   // Conditionally return a 200 response or a 404 Not Found
   Folder
-    .findById(id)
+    .findOne({_id: id, userId})
     .then(result => {
       if (!result) {
         return res.status(404).send('Folder not found');
@@ -51,6 +52,7 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
+  const userId = req.user.id;
 
   if (!('name' in req.body)) {
     const message = 'Missing name of new folder in request body';
@@ -60,6 +62,7 @@ router.post('/', (req, res, next) => {
   
   const newFolder = {
     name: req.body.name,
+    userId
   };
     
   Folder.create(newFolder)
@@ -81,6 +84,7 @@ router.put('/:id', (req, res, next) => {
 
   const { id } = req.params;
   const { name } = req.body;
+  const userId = req.user.id;
 
   if (!(mongodb.ObjectID.isValid(id))) {
     const err = new Error('The `id` is not valid');
@@ -88,14 +92,21 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
+  if('userId' in req.body) {
+    const message = 'Cannot change ownership of folder';
+    console.error(message);
+    return res.status(400).send(message);
+  }
+
   if (!('name' in req.body)) {
     const err = new Error('Missing name of new folder in request body');
     err.status = 400;
     return next(err);
   }
+
   const updateFolder = { name };
-  
-  Folder.findByIdAndUpdate(id, updateFolder, {new : true})
+  console.log({_id: id, userId});
+  Note.findOneAndUpdate({_id: id, userId}, updateFolder, {new : true})
     .then(result => {
       if (result) {
         res.json(result);
@@ -116,11 +127,12 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
   const idOfItemToRemove = req.params.id;
+  const userId = req.user.id;
   // delete all notes that have folderId equal to idOfItemToRemove
   Folder
-    .findByIdAndRemove(idOfItemToRemove)
+    .findOneAndRemove({_id : idOfItemToRemove, userId})
     .then(() => {
-      return Note.find({folderId : idOfItemToRemove}).remove();
+      return Note.find({folderId: idOfItemToRemove, userId}).remove();
     })
     .then(() => {
       res.status(204).end();

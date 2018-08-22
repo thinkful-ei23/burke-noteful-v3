@@ -3,6 +3,8 @@
 const express = require('express');
 const router = express.Router();
 const Note = require('../models/note');
+const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const mongodb = require('mongodb');
@@ -75,6 +77,7 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
+
   const { title, content, folderId, tags = [] } = req.body;
   const userId = req.user.id;
 
@@ -85,19 +88,46 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
+  if (folderId){
+    if (!mongoose.Types.ObjectId.isValid(folderId)) {
+      const err = new Error('The `folderId` is not valid');
+      err.status = 400;
+      return next(err);
+    }
+
+    Folder.find({_id: folderId, userId}).count()
+      .then(count => {
+        if (count === 0) {
+          const err = new Error('That folder does not belong to you');
+          err.status = 400;
+          return next(err);
+        }
+      });
   }
 
   if (tags) {
+    if (!Array.isArray(tags)) {
+      const err = new Error('The tags property must be an array');
+      err.status = 400;
+      return next(err);
+    }
+
     tags.forEach((tag) => {
+
       if (!mongoose.Types.ObjectId.isValid(tag)) {
         const err = new Error('The `id` is not valid');
         err.status = 400;
         return next(err);
       }
+
+      Tag.find({_id: tag, userId}).count()
+        .then(count => {
+          if (count === 0) {
+            const err = new Error('That tag does not belong to you');
+            err.status = 400;
+            return next(err);
+          }
+        });
     });
   }
 
