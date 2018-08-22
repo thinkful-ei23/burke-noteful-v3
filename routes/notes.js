@@ -166,21 +166,48 @@ router.put('/:id', (req, res, next) => {
     return res.status(400).send(message);
   }
 
-  if('folderId' in req.body) {
-    if (!(mongodb.ObjectID.isValid(req.body.folderId))) {
-      const message = 'Not a valid folder id';
-      console.error(message);
-      return res.status(400).send(message);
+  if ('folderId' in req.body){
+    const folderId = req.body.folderId;
+    if (!mongoose.Types.ObjectId.isValid(folderId)) {
+      const err = new Error('The `folderId` is not valid');
+      err.status = 400;
+      return next(err);
     }
+
+    Folder.find({_id: folderId, userId}).count()
+      .then(count => {
+        if (count === 0) {
+          const err = new Error('That folder does not belong to you');
+          err.status = 400;
+          return next(err);
+        }
+      });
   }
 
-  if('tags' in req.body) {
-    updateItem.tags.forEach(tag => {
-      if (!(mongoose.ObjectID.isValid(tag)) && tag !== '') {
-        const message = 'Not a valid tag id';
-        console.error(message);
-        return res.status(400).send(message);
+  if ('tags' in req.body) {
+    const tags = req.body.tags;
+    if (!Array.isArray(tags)) {
+      const err = new Error('The tags property must be an array');
+      err.status = 400;
+      return next(err);
+    }
+
+    tags.forEach((tag) => {
+
+      if (!mongoose.Types.ObjectId.isValid(tag)) {
+        const err = new Error('The `id` is not valid');
+        err.status = 400;
+        return next(err);
       }
+
+      Tag.find({_id: tag, userId}).count()
+        .then(count => {
+          if (count === 0) {
+            const err = new Error('That tag does not belong to you');
+            err.status = 400;
+            return next(err);
+          }
+        });
     });
   }
 
