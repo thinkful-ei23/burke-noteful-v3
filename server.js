@@ -29,6 +29,7 @@ app.use(express.static('public'));
 
 // Parse request body
 app.use(express.json());
+
 passport.use(localStrategy);
 passport.use(jwtStrategy);
 
