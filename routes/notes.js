@@ -179,6 +179,7 @@ router.put('/:id', (req, res, next) => {
   }
   
   let updatePromises = [];
+
   if (updateItem.folderId) {
   
     if (!mongoose.Types.ObjectId.isValid(updateItem.folderId)) {
@@ -196,7 +197,7 @@ router.put('/:id', (req, res, next) => {
         }
       })
     );
-  } else { // if it is undefined or an empty string, delete the property
+  } else { // if it is undefined or an empty string, set it to null
     updateItem.folderId = null;
   } 
 

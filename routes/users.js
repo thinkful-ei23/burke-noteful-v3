@@ -6,7 +6,7 @@ const User = require('../models/user');
 
 
 router.post('/', (req, res, next) => {
-  const {fullName, username, password} = req.body;
+  const {fullname, username, password} = req.body;
   
   const requestFields = Object.keys(req.body);
 
@@ -21,7 +21,6 @@ router.post('/', (req, res, next) => {
 
   // find if one of the fields is not a string
   const notAString = requestFields.find(field => ((typeof req.body[field]) !== 'string'));
-  console.log(notAString);
 
   if (notAString) {
     const err = new Error(`'${notAString}' expected to be a string`);
@@ -51,12 +50,18 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
+  let trimmedFullName;
+  if(fullname) {
+    trimmedFullName = fullname.trim();
+  }
+  
+
   return User.hashPassword(password)
     .then(digest => {
       const newUser = {
         username,
         password: digest,
-        fullName
+        fullname: trimmedFullName
       };
       return User.create(newUser);
     })

@@ -4,6 +4,7 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
+const jwt = require('passport-jwt');
 
 const app = require('../server');
 
@@ -11,9 +12,12 @@ const {TEST_MONGODB_URI} = require('../config');
 
 const Note = require('../models/note');
 const Folder = require('../models/folder');
+const User = require('../models/user');
 
-const seedNotes = require('../db/seed/notes');
+
 const seedFolders = require('../db/seed/folders');
+const seedUsers = require('../db/seed/users');
+const { JWT_SECRET } = require('../config');
 
 const expect = chai.expect;
 
@@ -26,13 +30,24 @@ describe('Folders API resource', function() {
   // otherwise we'd need to call a `done` callback. `runServer`,
   // `seedRestaurantData` and `tearDownDb` each return a promise,
   // so we return the value returned by these function calls.
+  let user;
+  let token;
+
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI)
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
   beforeEach(function () {
-    return Promise.all([Folder.insertMany(seedFolders), Folder.createIndexes()]);
+    return Promise.all([
+      User.insertMany(seedUsers),
+      Folder.insertMany(seedFolders),
+      Folder.createIndexes()
+    ])
+      .then(([users]) => {
+        user = users[0];
+        token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
+      });
   });
 
   afterEach(function () {
