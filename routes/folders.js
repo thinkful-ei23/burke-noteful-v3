@@ -92,7 +92,7 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  if('userId' in req.body) {
+  if(req.body.userId) {
     const message = 'Cannot change ownership of folder';
     console.error(message);
     return res.status(400).send(message);
@@ -105,8 +105,7 @@ router.put('/:id', (req, res, next) => {
   }
 
   const updateFolder = { name };
-  console.log({_id: id, userId});
-  Note.findOneAndUpdate({_id: id, userId}, updateFolder, {new : true})
+  Folder.findOneAndUpdate({_id: id, userId}, updateFolder, {new : true})
     .then(result => {
       if (result) {
         res.json(result);
