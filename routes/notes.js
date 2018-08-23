@@ -80,6 +80,9 @@ router.post('/', (req, res, next) => {
 
   const { title, content, folderId, tags = [] } = req.body;
   const userId = req.user.id;
+  
+  const newNote = { title, content, folderId, tags, userId };
+
 
   /***** Never trust users - validate input *****/
   if (!title) {
@@ -88,6 +91,9 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
+  let newPromises = [];
+
+  // if the folderId is truthy, check whether it is valid and that is belongs to the user  
   if (folderId){
     if (!mongoose.Types.ObjectId.isValid(folderId)) {
       const err = new Error('The `folderId` is not valid');
@@ -95,15 +101,19 @@ router.post('/', (req, res, next) => {
       return next(err);
     }
 
-    Folder.find({_id: folderId, userId}).count()
+    newPromises.push(Folder.find({_id: folderId, userId}).count()
       .then(count => {
         if (count === 0) {
           const err = new Error('That folder does not belong to you');
           err.status = 400;
-          return next(err);
+          return Promise.reject(err);
         }
-      });
+      })
+    );
+  } else { // if it is undefined or an empty string, delete the property
+    delete newNote.folderId;
   }
+
 
   if (tags) {
     if (!Array.isArray(tags)) {
@@ -120,20 +130,21 @@ router.post('/', (req, res, next) => {
         return next(err);
       }
 
-      Tag.find({_id: tag, userId}).count()
+      newPromises.push(Tag.find({_id: tag, userId}).count()
         .then(count => {
           if (count === 0) {
             const err = new Error('That tag does not belong to you');
             err.status = 400;
-            return next(err);
+            Promise.reject(err);
           }
-        });
+        })
+      );
     });
   }
 
-  const newNote = { title, content, folderId, tags, userId };
-
-  Note.create(newNote)
+  Promise.all(newPromises).then(() => {
+    return Note.create(newNote);
+  })
     .then(result => {
       res
         .location(`${req.originalUrl}/${result.id}`)
@@ -153,6 +164,7 @@ router.put('/:id', (req, res, next) => {
   const keyArray = Object.keys(req.body);
 
   keyArray.forEach(key => updateItem[key] = req.body[key]);
+  console.log(updateItem);
 
   if('userId' in req.body) {
     const message = 'Cannot change ownership of note';
@@ -165,26 +177,31 @@ router.put('/:id', (req, res, next) => {
     console.error(message);
     return res.status(400).send(message);
   }
-
-  if ('folderId' in req.body){
-    const folderId = req.body.folderId;
-    if (!mongoose.Types.ObjectId.isValid(folderId)) {
+  
+  let updatePromises = [];
+  if (updateItem.folderId) {
+  
+    if (!mongoose.Types.ObjectId.isValid(updateItem.folderId)) {
       const err = new Error('The `folderId` is not valid');
       err.status = 400;
       return next(err);
     }
 
-    Folder.find({_id: folderId, userId}).count()
+    updatePromises.push(Folder.find({_id: updateItem.folderId, userId}).count()
       .then(count => {
         if (count === 0) {
           const err = new Error('That folder does not belong to you');
           err.status = 400;
-          return next(err);
+          return Promise.reject(err);
         }
-      });
-  }
+      })
+    );
+  } else { // if it is undefined or an empty string, delete the property
+    updateItem.folderId = null;
+  } 
 
   if ('tags' in req.body) {
+
     const tags = req.body.tags;
     if (!Array.isArray(tags)) {
       const err = new Error('The tags property must be an array');
@@ -200,19 +217,23 @@ router.put('/:id', (req, res, next) => {
         return next(err);
       }
 
-      Tag.find({_id: tag, userId}).count()
+      updatePromises.push(Tag.find({_id: tag, userId}).count()
         .then(count => {
           if (count === 0) {
             const err = new Error('That tag does not belong to you');
             err.status = 400;
-            return next(err);
+            return Promise.reject(err);
           }
-        });
+        })
+      );
     });
   }
 
   // only update an item if that item has the userId and the id to be updated
-  Note.findOneAndUpdate({_id: idOfItemToUpdate, userId}, updateItem, {new : true})
+  Promise.all(updatePromises)
+    .then(() => {
+      return Note.findOneAndUpdate({_id: idOfItemToUpdate, userId}, updateItem, {new : true});
+    })
     .then(result => {
       res.json(result);
     })
