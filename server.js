@@ -7,7 +7,7 @@ const passport = require('passport');
 
 const localStrategy = require('./passport/local');
 const jwtStrategy = require('./passport/jwt');
-
+//check if travis is working
 const { PORT, MONGODB_URI } = require('./config');
 
 const notesRouter = require('./routes/notes');
