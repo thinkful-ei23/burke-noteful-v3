@@ -24,7 +24,7 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 
-describe.only('Folders API resource', function() {
+describe('Folders API resource', function() {
 
   // we need each of these hook functions to return a promise
   // otherwise we'd need to call a `done` callback. `runServer`,

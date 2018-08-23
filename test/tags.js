@@ -1,27 +1,28 @@
 'use strict';
 
-// why aren't we requiring mocha? mocha runs all of our tests. it is a framework vs. a library
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 const app = require('../server');
-
 const {TEST_MONGODB_URI} = require('../config');
 
-const Note = require('../models/note');
 const Tag = require('../models/tag');
+const User = require('../models/user');
 
-const seedNotes = require('../db/seed/notes');
 const seedTags = require('../db/seed/tags');
+const seedUsers = require('../db/seed/users');
+
+const { JWT_SECRET } = require('../config');
 
 const expect = chai.expect;
-
 chai.use(chaiHttp);
 
 
-describe('Tags API resource', function() {
-
+describe.only('Tags API resource', function() {
+  let user;
+  let token;
   // we need each of these hook functions to return a promise
   // otherwise we'd need to call a `done` callback. `runServer`,
   // `seedRestaurantData` and `tearDownDb` each return a promise,
@@ -32,7 +33,15 @@ describe('Tags API resource', function() {
   });
 
   beforeEach(function () {
-    return Promise.all([Tag.insertMany(seedTags), Tag.createIndexes()]);
+    return Promise.all([
+      User.insertMany(seedUsers),
+      Tag.insertMany(seedTags),
+      Tag.createIndexes()
+    ])
+      .then(([users]) => {
+        user = users[0];
+        token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
+      });
   });
 
   afterEach(function () {
@@ -47,8 +56,8 @@ describe('Tags API resource', function() {
     
     it('should return all existing tags', function() {
       return Promise.all([
-        Tag.find(),
-        chai.request(app).get('/api/tags')
+        Tag.find({userId: user.id}),
+        chai.request(app).get('/api/tags').set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
           expect(res).to.have.status(200);
@@ -61,8 +70,8 @@ describe('Tags API resource', function() {
     it('should return tags with the right fields', function() {
       let resTag;
       return Promise.all([
-        Tag.find(),
-        chai.request(app).get('/api/tags')
+        Tag.find({userId: user.id}),
+        chai.request(app).get('/api/tags').set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
           expect(res).to.have.status(200);
@@ -72,17 +81,18 @@ describe('Tags API resource', function() {
           res.body.forEach(function(Tag) {
             expect(Tag).to.be.a('object');
             expect(Tag).to.include.keys(
-              'id', 'name', 'createdAt', 'updatedAt');
+              'id', 'name', 'createdAt', 'updatedAt', 'userId');
           });
           resTag = res.body[0];
+          expect(res.body.length).to.eql(data.length);
           return Tag.findById(resTag.id);
         })
         .then (dataTag => {
           expect(resTag.id).to.equal(dataTag.id);
           expect(resTag.name).to.equal(dataTag.name);
-          expect(resTag.tags).to.deep.equal(dataTag.tags);
           expect(new Date(resTag.createdAt)).to.eql(dataTag.createdAt);
           expect(new Date(resTag.updatedAt)).to.eql(dataTag.updatedAt);
+          expect(mongoose.Types.ObjectId(resTag.userId)).to.deep.equal(dataTag.userId);
         });
     });
 
@@ -92,12 +102,12 @@ describe('Tags API resource', function() {
 
     it('should return the correct Tag', function() {
       let id;
-      return Tag.findOne()
+      return Tag.findOne({userId: user.id})
         .then(obj => {
           id = obj.id;
           return Promise.all([
             Tag.findById(id),
-            chai.request(app).get(`/api/tags/${id}`)
+            chai.request(app).get(`/api/tags/${id}`).set('Authorization', `Bearer ${token}`)
           ]);
         })
         .then(([dataTag, res]) => {
@@ -109,13 +119,14 @@ describe('Tags API resource', function() {
           expect(resTag.name).to.equal(dataTag.name);
           expect(new Date(resTag.createdAt)).to.eql(dataTag.createdAt);
           expect(new Date(resTag.updatedAt)).to.eql(dataTag.updatedAt);
+          expect(mongoose.Types.ObjectId(resTag.userId)).to.deep.equal(dataTag.userId);
         });
     });
 
     it('should return a 400 if passed an invalid id', function() {
       const id = 3;
       return chai.request(app)
-        .get(`/api/tags/${id}`)
+        .get(`/api/tags/${id}`).set('Authorization', `Bearer ${token}`)
         .then(function (res) {
           expect(res).to.have.status(400);
           expect(res.text).to.equal('Not a valid tag id');
@@ -126,7 +137,7 @@ describe('Tags API resource', function() {
       // how do we come up with a valid Tag and know that it's not in the database?
       const id = '111111111111131111112285';
       return chai.request(app)
-        .get(`/api/tags/${id}`)
+        .get(`/api/tags/${id}`).set('Authorization', `Bearer ${token}`)
         .then(function (res) {
           expect(res).to.have.status(404);
           expect(res.text).to.equal('Tag not found');
@@ -147,13 +158,14 @@ describe('Tags API resource', function() {
       return chai.request(app)
         .post('/api/tags')
         .send(newTag)
+        .set('Authorization', `Bearer ${token}`)
         .then(_res => {
           res = _res;
           expect(res).to.have.status(201);
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.keys('name', 'id', 'createdAt', 'updatedAt');
+          expect(res.body).to.have.keys('name', 'id', 'createdAt', 'updatedAt', 'userId');
           return Tag.findById(res.body.id);
         })
         .then(data => {
@@ -161,6 +173,7 @@ describe('Tags API resource', function() {
           expect(res.body.name).to.equal(data.name);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+          expect(mongoose.Types.ObjectId(res.body.userId)).to.deep.equal(data.userId);
         });
         
     });
@@ -172,6 +185,7 @@ describe('Tags API resource', function() {
       return chai.request(app)
         .post('/api/tags')
         .send(newItem)
+        .set('Authorization', `Bearer ${token}`)
         .then(function (res) {
           expect(res).to.have.status(400);
           expect(res.text).to.equal('Missing name of new tag in request body');
@@ -181,10 +195,10 @@ describe('Tags API resource', function() {
 
     // grabbed this from solution to check whether the bug was my test
     it('should return an error when given a duplicate name', function () {
-      return Tag.findOne()
+      return Tag.findOne({userId: user.id})
         .then(data => {
           const newItem = { 'name': data.name };
-          return chai.request(app).post('/api/tags').send(newItem);
+          return chai.request(app).post('/api/tags').send(newItem).set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
           expect(res).to.have.status(400);
@@ -209,18 +223,18 @@ describe('Tags API resource', function() {
       
       let data;
       let _res;
-      return Tag.findOne()
+      return Tag.findOne({userId: user.id})
         .then(_data => {
           data = _data;
           return chai.request(app).put(`/api/tags/${data.id}`)
-            .send(updateObject);
+            .send(updateObject).set('Authorization', `Bearer ${token}`);
         })
         .then((res) => {
           _res = res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.an('object');
-          expect(res.body).to.have.keys('id', 'name', 'createdAt', 'updatedAt');
+          expect(res.body).to.have.keys('id', 'name', 'createdAt', 'updatedAt', 'userId');
           return Tag.findById(data.id);
         })
         .then(data => {
@@ -228,6 +242,7 @@ describe('Tags API resource', function() {
           expect(_res.body.name).to.equal(data.name);
           expect(new Date(_res.body.createdAt)).to.eql(new Date(data.createdAt));
           expect(new Date(_res.body.updatedAt)).to.eql(new Date(data.updatedAt));
+          expect(mongoose.Types.ObjectId(_res.body.userId)).to.deep.equal(data.userId);
         });
 
     });
@@ -235,11 +250,11 @@ describe('Tags API resource', function() {
     it('should respond with a 400 if you attempt to update a Tag without a name', function () {
       const updateObject = {};
       let data;
-      return Tag.findOne()
+      return Tag.findOne({userId: user.id})
         .then(_data => {
           data = _data;
           return chai.request(app).put(`/api/tags/${data.id}`)
-            .send(updateObject);
+            .send(updateObject).set('Authorization', `Bearer ${token}`);
         })
         .then((res) => {
           const text = JSON.parse(res.error.text).message;
@@ -249,22 +264,21 @@ describe('Tags API resource', function() {
        
     });
 
-    // grabbed this from solution (thought it would help, still have the same problem that all tests pass on their own but not as a whole)
+    
     it('should return an error when given a duplicate name', function () {
-      // this isn't working and I've used both their put endpoint and the test they gave
-      return Tag.find().limit(2)
+      return Tag.find({userId: user.id}).limit(2)
         .then(results => {
           const [item1, item2] = results;
           item1.name = item2.name;
           return chai.request(app)
             .put(`/api/tags/${item1.id}`)
-            .send(item1);
+            .send({name: item1.name}).set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
+          console.log(res.error);
+          const text = JSON.parse(res.error.text).message;
           expect(res).to.have.status(400);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('object');
-          expect(res.body.message).to.equal('You already have a tag with that name');
+          expect(text).to.equal('You already have a tag with that name');
         });
     });
 
@@ -275,10 +289,10 @@ describe('Tags API resource', function() {
 
     it('should delete a Tag by id and a note that had that tag should not have it anymore', function() {
       let data;
-      return Tag.findOne()
+      return Tag.findOne({userId: user.id})
         .then(_data => {
           data = _data;
-          return chai.request(app).delete(`/api/tags/${data.id}`);
+          return chai.request(app).delete(`/api/tags/${data.id}`).set('Authorization', `Bearer ${token}`);
         })
         .then((res) => {
           expect(res).to.have.status(200);
