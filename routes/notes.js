@@ -36,8 +36,6 @@ router.get('/', (req, res, next) => {
     filter.$or = [title, content];
   }
 
-  console.log(filter);
-
   Note
     .find(filter)
     .populate('tags')
@@ -163,8 +161,10 @@ router.put('/:id', (req, res, next) => {
   const updateItem = {};
   const keyArray = Object.keys(req.body);
 
+
+
   keyArray.forEach(key => updateItem[key] = req.body[key]);
-  console.log(updateItem);
+
 
   if('userId' in req.body) {
     const message = 'Cannot change ownership of note';
@@ -229,11 +229,12 @@ router.put('/:id', (req, res, next) => {
       );
     });
   }
+  
 
   // only update an item if that item has the userId and the id to be updated
   Promise.all(updatePromises)
     .then(() => {
-      return Note.findOneAndUpdate({_id: idOfItemToUpdate, userId}, updateItem, {new : true});
+      return Note.findOneAndUpdate({_id: idOfItemToUpdate, userId: req.user.id}, updateItem, {new : true});
     })
     .then(result => {
       res.json(result);

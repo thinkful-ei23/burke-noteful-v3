@@ -20,7 +20,7 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 
-describe.only('Tags API resource', function() {
+describe('Tags API resource', function() {
   let user;
   let token;
   // we need each of these hook functions to return a promise
@@ -275,7 +275,6 @@ describe.only('Tags API resource', function() {
             .send({name: item1.name}).set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
-          console.log(res.error);
           const text = JSON.parse(res.error.text).message;
           expect(res).to.have.status(400);
           expect(text).to.equal('You already have a tag with that name');
