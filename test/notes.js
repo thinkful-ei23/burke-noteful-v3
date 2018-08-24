@@ -267,6 +267,64 @@ describe('Notes API resource', function() {
        
     });
 
+    it('should respond with a 400 if you attempt to post a note with a folder that does not belong to the user', function () {
+      const newItem = {
+        'title': 'title',
+        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...',
+        'folderId': '222222222222222222222208'
+      };
+
+      return chai.request(app)
+        .post('/api/notes')
+        .send(newItem)
+        .set('Authorization', `Bearer ${token}`)
+        .then(function (res) {
+          const message = JSON.parse(res.text).message;
+          expect(res).to.have.status(400);
+          expect(message).to.equal('That folder does not belong to you');
+        });
+       
+    });
+
+
+    it('should respond with a 400 if you attempt to post a note with a tag that does not belong to the user', function () {
+      const newItem = {
+        'title': 'title',
+        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...',
+        'tags': ['333333333333333333333308']
+      };
+
+      return chai.request(app)
+        .post('/api/notes')
+        .send(newItem)
+        .set('Authorization', `Bearer ${token}`)
+        .then(function (res) {
+          const message = JSON.parse(res.text).message;
+          expect(res).to.have.status(400);
+          expect(message).to.equal('That tag does not belong to you');
+        });
+       
+    });
+
+    it('should respond with a 400 if you attempt to post a note with a tag that is invalid', function () {
+      const newItem = {
+        'title': 'title',
+        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...',
+        'tags': ['333333333333333333333']
+      };
+
+      return chai.request(app)
+        .post('/api/notes')
+        .send(newItem)
+        .set('Authorization', `Bearer ${token}`)
+        .then(function (res) {
+          const message = JSON.parse(res.text).message;
+          expect(res).to.have.status(400);
+          expect(message).to.equal('The `id` is not valid');
+        });
+       
+    });
+
   });
 
 
@@ -317,11 +375,11 @@ describe('Notes API resource', function() {
     it('should send a 400 if you send nothing to update', function() {
       const updateObject = {};
       let data;
-      // 1) First, find something to update
+      // 1 First, find something to update
       return Note.findOne({userId: user.id})
         .then(_data => {
           data = _data;
-          // 2) then call the API with the ID
+          // 2 then call the API with the ID
           return chai.request(app).put(`/api/notes/${data.id}`)
             .send(updateObject).set('Authorization', `Bearer ${token}`);
         })
@@ -330,8 +388,62 @@ describe('Notes API resource', function() {
           expect(res.text).to.equal('Nothing sent to update');
         });
    
-
     });
+
+    it('should respond with a 400 if you attempt to update a note with a folder that does not belong to the user', function () {
+      const updateItem = {
+        'folderId': '222222222222222222222208'
+      };
+
+      return chai.request(app)
+        .put('/api/notes/111111111111111111111101')
+        .send(updateItem)
+        .set('Authorization', `Bearer ${token}`)
+        .then(function (res) {
+          const message = JSON.parse(res.text).message;
+          expect(res).to.have.status(400);
+          expect(message).to.equal('That folder does not belong to you');
+        });
+       
+    });
+
+
+    it('should respond with a 400 if you attempt to update a note with a tag that does not belong to the user', function () {
+      const updateItem = {
+        'tags': ['333333333333333333333308']
+      };
+
+      return chai.request(app)
+        .put('/api/notes/111111111111111111111101')
+        .send(updateItem)
+        .set('Authorization', `Bearer ${token}`)
+        .then(function (res) {
+          const message = JSON.parse(res.text).message;
+          expect(res).to.have.status(400);
+          expect(message).to.equal('That tag does not belong to you');
+        });
+       
+    });
+
+    it('should respond with a 400 if you attempt to update a note with a tag that is invalid', function () {
+      const updateItem = {
+        'tags': ['3333']
+      };
+
+      return chai.request(app)
+        .put('/api/notes/111111111111111111111103')
+        .send(updateItem)
+        .set('Authorization', `Bearer ${token}`)
+        .then(function (res) {
+          const message = JSON.parse(res.text).message;
+          expect(res).to.have.status(400);
+          expect(message).to.equal('The `id` is not valid');
+        });
+       
+    });
+
+
+
   });
 
   describe('DELETE api/notes/:id', function() {

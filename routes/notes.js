@@ -126,22 +126,24 @@ router.post('/', (req, res, next) => {
         err.status = 400;
         return next(err);
       }
+  
 
       newPromises.push(Tag.find({_id: tag, userId}).count()
         .then(count => {
           if (count === 0) {
             const err = new Error('That tag does not belong to you');
             err.status = 400;
-            Promise.reject(err);
+            return Promise.reject(err);
           }
         })
       );
     });
   }
 
-  Promise.all(newPromises).then(() => {
-    return Note.create(newNote);
-  })
+  Promise.all(newPromises)
+    .then(() => {
+      return Note.create(newNote);
+    })
     .then(result => {
       res
         .location(`${req.originalUrl}/${result.id}`)
@@ -163,7 +165,6 @@ router.put('/:id', (req, res, next) => {
 
 
   keyArray.forEach(key => updateItem[key] = req.body[key]);
-
 
   if('userId' in req.body) {
     const message = 'Cannot change ownership of note';
@@ -212,6 +213,7 @@ router.put('/:id', (req, res, next) => {
     tags.forEach((tag) => {
 
       if (!mongoose.Types.ObjectId.isValid(tag)) {
+        console.log('in correct error');
         const err = new Error('The `id` is not valid');
         err.status = 400;
         return next(err);

@@ -9,12 +9,7 @@ const app = require('../server');
 
 const {TEST_MONGODB_URI} = require('../config');
 
-const Note = require('../models/note');
-const Folder = require('../models/folder');
 const User = require('../models/user');
-
-
-const seedFolders = require('../db/seed/folders');
 const seedUsers = require('../db/seed/users');
 const { JWT_SECRET } = require('../config');
 
@@ -24,10 +19,6 @@ chai.use(chaiHttp);
 
 describe('Auth API resource', function() {
 
-  // we need each of these hook functions to return a promise
-  // otherwise we'd need to call a `done` callback. `runServer`,
-  // `seedRestaurantData` and `tearDownDb` each return a promise,
-  // so we return the value returned by these function calls.
   let user;
   let token;
 
