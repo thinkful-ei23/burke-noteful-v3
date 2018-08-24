@@ -7,7 +7,6 @@ const Folder = require('../models/folder');
 const Tag = require('../models/tag');
 const mongoose = require('mongoose');
 const passport = require('passport');
-const mongodb = require('mongodb');
 
 router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
@@ -168,13 +167,13 @@ router.put('/:id', (req, res, next) => {
 
   if('userId' in req.body) {
     const message = 'Cannot change ownership of note';
-    console.error(message);
+    // console.error(message);
     return res.status(400).send(message);
   }
 
   if (!(keyArray.length)) {
     const message = 'Nothing sent to update';
-    console.error(message);
+    // console.error(message);
     return res.status(400).send(message);
   }
   

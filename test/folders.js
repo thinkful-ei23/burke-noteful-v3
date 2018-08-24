@@ -80,6 +80,7 @@ describe('Folders API resource', function() {
         chai.request(app).get('/api/folders').set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
+          expect(data.length).to.equal(res.body.length);
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');

@@ -31,7 +31,7 @@ router.get('/:id', (req, res, next) => {
   const id = req.params.id;
   if (!(mongodb.ObjectID.isValid(id))) {
     const message = 'Not a valid id';
-    console.error(message);
+    // console.error(message);
     return res.status(400).send(message);
   }
 
@@ -56,7 +56,7 @@ router.post('/', (req, res, next) => {
 
   if (!('name' in req.body)) {
     const message = 'Missing name of new folder in request body';
-    console.error(message);
+    // console.error(message);
     return res.status(400).send(message);
   }
   
@@ -94,7 +94,7 @@ router.put('/:id', (req, res, next) => {
 
   if(req.body.userId) {
     const message = 'Cannot change ownership of folder';
-    console.error(message);
+    // console.error(message);
     return res.status(400).send(message);
   }
 

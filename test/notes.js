@@ -153,6 +153,38 @@ describe('Notes API resource', function() {
           expect(new Date(resNote.updatedAt)).to.eql(new Date(dataNote.updatedAt));
         });
     });
+
+    it('should return the right notes for a certain folder id', function() {
+      const folderId = '222222222222222222222201';
+      return Promise.all([
+        Note.find({folderId}),
+        chai.request(app).get(`/api/notes?folderId=${folderId}`).set('Authorization', `Bearer ${token}`)
+      ])
+        .then(([data, res]) => {
+          expect(data.length).to.equal(res.body.length);
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('array');
+        });
+        
+    });
+
+    it('should return the right notes for a certain tag id', function() {
+      const tagId = '333333333333333333333301';
+      return Promise.all([
+        Note.find({tags: tagId}),
+        chai.request(app).get(`/api/notes?tagId=${tagId}`).set('Authorization', `Bearer ${token}`)
+      ])
+        .then(([data, res]) => {
+          expect(data.length).to.equal(res.body.length);
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('array');
+        });
+        
+    });
+
+
   });
 
   describe('GET api/notes/:id', function() {

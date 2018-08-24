@@ -191,6 +191,7 @@ describe('Noteful API - Users', function () {
           });
       
       });
+    
     });
   });
 });
